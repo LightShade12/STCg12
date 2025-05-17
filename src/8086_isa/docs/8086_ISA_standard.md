@@ -1,8 +1,8 @@
 
-Please write comments on top of functions that mention:
-    method of argument passing (stack/register) (if any)
-    return value (if any)
-    registers for the caller to save (if any) (these are called 'scratch registers')
+Please write comments on top of functions that mention:<br>
+    method of argument passing (stack/register) (if any)<br>
+    return value (if any)<br>
+    registers for the caller to save (if any) (these are called 'scratch registers')<br>
 
 e.g:
 
