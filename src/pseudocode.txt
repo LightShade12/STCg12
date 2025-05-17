@@ -5,7 +5,7 @@ Start:
     Get Sample Array in memory
         Request Sample count
         Request Sample values
-        Set samlpes in contigous memory
+        Set samples in contiguous memory
     
     Sort samples
         Sort via QuickSort
