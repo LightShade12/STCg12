@@ -7,7 +7,7 @@ Please write comments on top of functions that mention:<br>
 e.g:
 
 cdecl int computeMean(data, size) <br>
-returns 16-bit mean value <br>
+returns 16-bit mean value in AX <br>
 args: data: 16-bit array start index from DS; pass in AX <br>
         size: 16-bit array length value; pass in BX <br>
 scratch registers: AX, BX, DX <br>
