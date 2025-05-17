@@ -1,0 +1,24 @@
+
+Statistical Calculator Pseudo Code
+
+Start:
+    Get Sample Array in memory
+        Request Sample count
+        Request Sample values
+        Set samlpes in contigous memory
+    
+    Sort samples
+        Sort via QuickSort
+
+    Compute details
+        Compute count
+        Compute Arithemtic Mean
+        Compute Arithemtic Median
+        Compute Mode
+        Compute max sample value
+        Compute min samlpe value
+        Compute Standard Deviation
+        Compute Variance
+
+    Display details
+End:

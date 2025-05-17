@@ -1,9 +1,6 @@
-# STCg12 - STatistical Calculator from Group 12
-COA group 12 software project repository
+STCg12
 
-## STCg12
-
-## Introduction:
+Introduction:
 The STCg12 (Statistical Calculator from Group 12) is a calculator program oriented to very basic statistical computations.
 The program specifically computes various statistical interpretations, of a specific population as specified by the program user.
 
@@ -20,14 +17,14 @@ The various statistical data computed by our program include:
 Our program collects population data from the user, then computes the 8 basic statistical dimensions of a population and displays the 
 output (on supported languages).
 
-## Technical:
+Technical:
 The program has implementations in 3 languages:
 - C 17
 - Aarch32
 - 8086 ISA
 
-### Platforms:
-The C17 implementation is a robust codebase that can be compiled to any target platform via a suitable compiler. It is tested on AMD64 platform on an Intel Core i7 10750H CPU on Windows 10, built by clang 18.1.8.
+Platforms:
+The C17 implementation is a robust codebase that can be compiled to any target platform via a suitable compiler.
 
 The 8086 ISA implementation is tailored for the Intel 8086 microprocessor.
 

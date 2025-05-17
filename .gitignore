@@ -23,6 +23,7 @@
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode
 
 # CMAKE----------------
+[Bb]uild/
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
