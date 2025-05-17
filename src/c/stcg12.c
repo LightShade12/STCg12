@@ -278,7 +278,7 @@ int main(int argc, char** argv)
     (void)printf_s("[Statistical Calculator v1.0.1.0]\nworking directory: %s\n",
                    argv[0], argc);
 
-SMP_INP:
+SMPLC_INP:
     printf_s("Enter sample size (INT):\n");
     size_t sample_size = 0;
     {
@@ -286,7 +286,7 @@ SMP_INP:
         if (!res || sample_size <= 0 || res > 1)
         {
             (void)fprintf_s(stderr, "invalid input\n");
-            goto SMP_INP;
+            goto SMPLC_INP;
         }
     }
 
