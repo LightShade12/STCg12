@@ -279,7 +279,7 @@ int main(int argc, char** argv)
                    argv[0], argc);
 
 SMPLC_INP:
-    printf_s("Enter sample size (INT):\n");
+    printf_s("Enter population size (INT):\n");
     size_t sample_size = 0;
     {
         int res = scanf_s("%d", &sample_size);

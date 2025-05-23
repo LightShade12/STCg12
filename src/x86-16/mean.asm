@@ -5,7 +5,7 @@
 ;FUNCTION
 ; cdecl void STC_computeMean(arr_seg_idx, arr_size)
 ; arr_seg_idx : AX
-; arr_size (in bytes): BX
+; arr_size : BX
 ; returns mean : AX
 ;-------------------------------
 
