@@ -2,29 +2,33 @@
 org 100h
 jmp start
 
-;==================================================================================================
+;=============CONSTANT DATA=====================================================================================
 .DATA
-titlestr db '[Statistical Calculator v1.0.1.0]$'
-szpmtstr db 'Enter population size (INT) (MAX=9): $'
-msgstr db 'Requesting sample values:$'
-inpmtstr db "Enter value for sample $"
-msg2 db " (INT) (UNSIGNED DECIMAL) (MAX=9): $"
+
+; MEMORY BLOCK
 sample_buffer dw 10 DUP(0)
-printarr_str db "Samples: $"
-sorted_str db "Sorted: $"
-sp_v_set_str db "Sample values set [OK]$"
+
+; STRINGS FOR PRINTING 
+prog_title_str db '[Statistical Calculator v1.0.1.0]$'
+usr_size_prompt_str db 'Enter population size (INT) (MAX=9): $'
+input_loop_heading_str db 'Requesting sample values:$'
+usr_sample_prompt_beg_str db "Enter value for sample $"
+usr_sample_prompt_end_str db " (INT) (UNSIGNED DECIMAL) (MAX=9): $"
+arr_print_str db "Samples: $"
+arr_sorted_print_str db "Sorted: $"
+input_confirm_str db "Sample values set [OK]$"
 divider_str db "[==============================================================]$"
 count_str db "Count: $"
 mean_str db "Arithmetic Mean: $"
 median_str db "Arithmetic Median: $"
 mode_str db "Mode: $"
-maxstr db "Max: $"
-minstr db "Min: $"
-sdstr db "Standard deviation (Sigma): $"
-varstr db "Variance (Sigma^2): $"
-endstr db "[PROGRAM END]$"
-teamstr db "[Software by: GROUP 12]$"
-discstr db "NOTE: INTEGER MATHEMATICS ONLY$"
+arr_max_str db "Max: $"
+arr_min_str db "Min: $"
+standard_deviation_str db "Standard deviation (Sigma): $"
+variance_str db "Variance (Sigma^2): $"
+prog_end_str db "[PROGRAM END]$"
+team_name_str db "[Software by: GROUP 12]$"
+note1_str db "NOTE: INTEGER MATHEMATICS ONLY$"
 ;==================================================================================================
 .CODE
 
@@ -32,63 +36,11 @@ INCLUDE "qsort.asm"
 INCLUDE "mean.asm"
 INCLUDE "utils.asm"
 INCLUDE "mode.asm"
-
-NEWLINE macro
-    ;newline
-    MOV AH, 0x2                         
-    MOV DL, 0DH; cr
-    INT 021H
-    MOV DL, 0AH; \n
-    INT 021H
-NEWLINE endm
-
-; void println(string addr)
-; string addr : dx
-println proc
-    mov ah, 0x9
-    int 0x21
-    NEWLINE
-    ret    
-println endp
-
-; void print(string addr)
-; string addr : dx
-print proc
-    mov ah, 0x9
-    int 0x21
-    ret    
-print endp
-
-
-; int chtoi(char)
-; char : al
-; return int : al
-chtoi proc
-    push bx
-    mov bl, al
-    mov ax, 0
-    sub bl, '0'; '0'
-    mov al, bl
-    pop bx
-    ret
-chtoi endp
-
-; char itoch(int)
-; int : al
-; return char : al
-itoch proc
-    push bx
-    mov bl, al
-    mov ax, 0
-    add bl, '0'; '0'
-    mov al, bl
-    pop bx
-    ret
-itoch endp
+INCLUDE "SD.asm"
 
 ; returns arr_size : AX
 getSampleArr proc
-    lea dx, szpmtstr
+    lea dx, usr_size_prompt_str
     call print
 
     ; parse int
@@ -103,11 +55,11 @@ getSampleArr proc
     
     NEWLINE
 
-    lea dx, msgstr
+    lea dx, input_loop_heading_str
     call println
 
 inp_loop:
-    lea dx, inpmtstr
+    lea dx, usr_sample_prompt_beg_str
     call print
 
     mov al, cl
@@ -127,7 +79,7 @@ inp_loop:
     mov ah, 02h
     int 21h
     
-    lea dx, msg2
+    lea dx, usr_sample_prompt_end_str
     call print
 
     ; single inputs
@@ -143,7 +95,7 @@ inp_loop:
     dec cl
     jnz inp_loop
 inp_loop_end:
-    lea dx, sp_v_set_str
+    lea dx, input_confirm_str
     call println
     lea dx, divider_str
     call println
@@ -152,208 +104,37 @@ inp_loop_end:
     ret
 getSampleArr endp
 
-; void printArr(arr_seg_offset, arr_size)
-; arr_seg_offset : AX
-; arr_size : BX
-printArr proc
-    push cx
-    push si
-    
-    mov si, 0
-    mov cx, bx
-    mov bx, ax
-    xor ax, ax
-    
-printloop:
-    
-    mov ax, word ds[bx+si]
-    call itoch
-    mov dl, al
-    mov ah, 02h
-    int 21h
-    
-    mov ah, 02h
-    mov dl, ','
-    int 21h
-    
-    inc si
-    inc si
-    dec cx
-    
-    jnz printloop
-    
-endprintloop:
-    NEWLINE
-    
-    pop si
-    pop cx
-    ret
-printArr endp
-
-; TODO: bad design
-callQsort proc
-    ; prep to call qsort-----
-    ; save registers ==
-    push dx
-    push cx
-    push bx
-    push ax; arr_sz
-    
-    mov bx, 2
-    mul bx ; 2 bytes(1 word)(BX) * count(AX)
-    mov bx, ax; bx = arr_byte_sz
-    dec ax
-    dec ax; minus 1 word (cuz its an offset)
-    
-    ; pass args (cdecl) ==
-    push ax; arg: end offset
-
-    mov ax, 0; 2 bytes(1 word) * 0 offset
-    push ax; arg: start offset
-    
-    mov ax, bx ; arg: arr_size
-    mov bx, 2
-    div bx; ax = arr_sz
-    push ax
-
-    mov ax, OFFSET sample_buffer; get src arr offset from seg
-    push ax; arg: arr_seg_idx
-
-    xor ax, ax; clear
-
-    ;cdecl void qsort(arr_seg_idx, arr_size, start offset, end offset)
-    call STC_qsort
-
-    add sp, 8; cleanup args from stack
-
-    ; restore
-    pop ax
-    pop bx
-    pop cx
-    pop dx
-    ret
-callQsort endp
-
-; sqrt of v : AX
-; returns AX: sqrt(v)
-STC_sqrt proc
-    push cx
-    push bx
-    
-    mov bx, ax; bx = v
-    mov cx, 1
-    
-sqrtloop:
-    
-    mov ax, cx
-    mul ax; sqr(cx)
-    cmp ax, bx
-    jg sqrtloopend; if (sqr(cx)>v): break
-    
-    inc cx
-    jmp sqrtloop; loopback while(true)
-
-sqrtloopend:
-    sub cx, 1
-    mov ax, cx
-    
-    pop bx
-    pop cx
-    ret
-STC_sqrt endp
-    
-computePopulationStandardDeviation proc
-    ;TEMP=================
-    ;mov ax, 3
-    ;ret
-    ;TEMP=================
-    push dx
-    push cx
-    push si
-    push ax; arr_seg_offset
-    
-    push bx
-    
-    call STC_computeMean
-    mov dx, ax; dx = mean (mu)
-    
-    pop cx; cx = arr_sz
-    xor ax, ax; numerator
-    pop bx; bx = arr_seg_offset
-    mov si, 0; byte idx
-    
-    push cx; save orig arr_sz
-
-sdloop:
-    push cx; save arr_sz
-    
-    mov cx, word ds[bx+si]; xi
-    sub cx, dx; xi - mu
-    
-    xchg cx, ax; ax -> diff, cx -> numer
-    push dx
-    mul ax; diff squared
-    pop dx
-    xchg cx,  ax; cx -> diff, ax -> numer
-    
-    add ax, cx; numerator += diff
-    
-    pop cx
-    
-    inc si
-    inc si
-    dec cx
-    jnz sdloop:
-endsdloop:
-    pop cx; restore orig arr_sz
-    xor dx, dx
-    div cx; numerator/arr_sz
-    
-    ; the quotient is in AX
-    call STC_sqrt
-    
-    pop si
-    pop cx
-    pop dx
-    ret
-computePopulationStandardDeviation endp
-
 ;=================================== PROGRAM START==============================
 start:
+; setup ds
 mov ax, cs
 mov ds, ax
 xor ax, ax
 
-; TEMP====================
-mov ax, 9
-call STC_sqrt
-xor ax, ax
-; TEMP====================
-
+; decorative prints
 lea dx, divider_str
 call println
 
-lea dx, titlestr
+lea dx, prog_title_str
 call println
 
-lea dx, teamstr
+lea dx, team_name_str
 call println
 
-lea dx, discstr
+lea dx, note1_str
 call println
 
 lea dx, divider_str
 call println
 
-call getSampleArr
-push ax; for 2nd print
-push ax; for 1st print
+; call sample collection procedure
+call getSampleArr; will return arr_size to AX
+push ax; for print
 
 ;=====PRINT ARRAY========================
 
-lea dx, printarr_str
+lea dx, arr_print_str
 call print
-pop ax
 
 ; pass args
 mov bx, ax
@@ -362,7 +143,7 @@ call printArr
 
 ;=======PRINT SORTED ARRAY=====================
 
-lea dx, sorted_str
+lea dx, arr_sorted_print_str
 call print
 pop ax; arr_sz
 
@@ -375,34 +156,27 @@ mov bx, ax
 mov ax, OFFSET sample_buffer
 call printArr
 
+; display COUNT =============================
+
 lea dx, count_str
 call print
 
 pop ax; restore arr_sz
-push ax
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+
+call printNum
 
 NEWLINE
 
 ; display MEAN =========================
-pop ax
 push ax; save arr_sz
 mov bx, ax ;arr_sz(words)
 mov ax, OFFSET sample_buffer ;arr_seg_offset
 call STC_computeMean
-push ax; save mean
 
 lea dx, mean_str
 call print
 
-pop ax; restore mean
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+call printNum
 
 NEWLINE
 
@@ -412,17 +186,12 @@ push ax; save arr_sz
 
 mov bx, OFFSET sample_buffer
 xchg ax, bx
-call STC_computeMedian
-push ax; save median
+call STC_computeMedian; returns median in AX
 
 lea dx, median_str
 call print
 
-pop ax; restore median
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+call printNum; AX has Median value
 
 NEWLINE
 
@@ -432,17 +201,12 @@ push ax; save arr_sz
 
 mov bx, OFFSET sample_buffer
 xchg ax, bx
-call STC_computeMode
-push ax; save mode
+call STC_computeMode; returns mode in AX
 
 lea dx, mode_str
 call print
 
-pop ax; restore mode
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+call printNum;AX has mode value
 
 NEWLINE
 
@@ -457,16 +221,11 @@ dec ax; ax--
 dec ax; ax = offset (size-1)
 mov si, ax
 mov ax, word ds[bx+si]; end element
-push ax; save max
 
-lea dx, maxstr
+lea dx, arr_max_str
 call print
 
-pop ax; restore max
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+call printNum
 
 NEWLINE
 ; display MIN =============================
@@ -474,16 +233,11 @@ pop ax; arr_sz
 push ax; save arr_sz
 mov bx, OFFSET sample_buffer
 mov ax, word ds[bx]; beginning element
-push ax; save min
 
-lea dx, minstr
+lea dx, arr_min_str
 call print
 
-pop ax; restore min
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+call printNum
 
 NEWLINE
 ; display SD =============================
@@ -492,43 +246,36 @@ pop ax; arr_sz
 mov bx, OFFSET sample_buffer
 xchg ax, bx
 call computePopulationStandardDeviation
-push ax; save SD
 
-lea dx, sdstr
+lea dx, standard_deviation_str
 call print
 
-pop ax; restore SD
-push ax; save SD
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+push ax; save SD for variance
+call printNum
 
 NEWLINE
 ; display VARIANCE =============================
 
 pop ax; restore SD
 mul ax; VAR = SQR(SD)
-push ax; save VAR
 
-lea dx, varstr
+lea dx, variance_str
 call print
 
-pop ax; restore VAR
-call itoch
-mov dx, ax
-mov ah, 02h
-int 21h
+call printNum
 
 NEWLINE
 ; END =========================================
+; decorative prints
 lea dx, divider_str
 call println
 
-lea dx, endstr
+lea dx, prog_end_str
 call println
 
-;========================================
+;================================================
 
 mov ah, 4Ch; return to OS
 int 0x21
+
+; PROGRAM END ===================================================================

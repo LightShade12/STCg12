@@ -180,3 +180,46 @@ _end:
 STC_qsort endp
 
 
+; TODO: bad design
+callQsort proc
+    ; prep to call qsort-----
+    ; save registers ==
+    push dx
+    push cx
+    push bx
+    push ax; arr_sz
+    
+    mov bx, 2
+    mul bx ; 2 bytes(1 word)(BX) * count(AX)
+    mov bx, ax; bx = arr_byte_sz
+    dec ax
+    dec ax; minus 1 word (cuz its an offset)
+    
+    ; pass args (cdecl) ==
+    push ax; arg: end offset
+
+    mov ax, 0; 2 bytes(1 word) * 0 offset
+    push ax; arg: start offset
+    
+    mov ax, bx ; arg: arr_size
+    mov bx, 2
+    div bx; ax = arr_sz
+    push ax
+
+    mov ax, OFFSET sample_buffer; get src arr offset from seg
+    push ax; arg: arr_seg_idx
+
+    xor ax, ax; clear
+
+    ;cdecl void qsort(arr_seg_idx, arr_size, start offset, end offset)
+    call STC_qsort
+
+    add sp, 8; cleanup args from stack
+
+    ; restore
+    pop ax
+    pop bx
+    pop cx
+    pop dx
+    ret
+callQsort endp

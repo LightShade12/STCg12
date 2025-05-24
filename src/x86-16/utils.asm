@@ -100,3 +100,148 @@ endminarrloop:
     pop dx
     ret
 STC_minArr endp
+
+NEWLINE macro
+    push ax
+    push dx
+    ;newline
+    MOV AH, 0x2                         
+    MOV DL, 0DH; cr
+    INT 021H
+    MOV DL, 0AH; \n
+    INT 021H
+    pop dx
+    pop ax
+NEWLINE endm
+
+; void println(string addr)
+; string addr : dx
+println proc
+    push ax
+    mov ah, 0x9
+    int 0x21
+    NEWLINE
+    pop ax
+    ret    
+println endp
+
+; void print(string addr)
+; string addr : dx
+print proc
+    push ax
+    mov ah, 0x9
+    int 0x21
+    pop ax
+    ret    
+print endp
+
+
+; int chtoi(char)
+; char : al
+; return int : al
+chtoi proc
+    push bx
+    mov bl, al
+    mov ax, 0
+    sub bl, '0'; '0'
+    mov al, bl
+    pop bx
+    ret
+chtoi endp
+
+; char itoch(int)
+; int : al
+; return char : al
+itoch proc
+    push bx
+    mov bl, al
+    mov ax, 0
+    add bl, '0'; '0'
+    mov al, bl
+    pop bx
+    ret
+itoch endp
+
+; void printNum(num)
+; num : AX
+printNum proc
+push dx
+push ax
+call itoch
+mov dx, ax
+mov ah, 02h
+int 21h
+pop ax
+pop dx
+ret
+printNum endp
+
+; void printArr(arr_seg_offset, arr_size)
+; arr_seg_offset : AX
+; arr_size : BX
+printArr proc
+    push cx
+    push si
+    push bx
+    push ax
+    
+    mov si, 0
+    mov cx, bx
+    mov bx, ax
+    xor ax, ax
+    
+printloop:
+    
+    mov ax, word ds[bx+si]
+    call itoch
+    mov dl, al
+    mov ah, 02h
+    int 21h
+    
+    mov ah, 02h
+    mov dl, ','
+    int 21h
+    
+    inc si
+    inc si
+    dec cx
+    
+    jnz printloop
+    
+endprintloop:
+    NEWLINE
+    
+    pop ax
+    pop bx 
+    pop si
+    pop cx
+    ret
+printArr endp
+
+; sqrt of v : AX
+; returns AX: sqrt(v)
+STC_sqrt proc
+    push cx
+    push bx
+    
+    mov bx, ax; bx = v
+    mov cx, 1
+    
+sqrtloop:
+    
+    mov ax, cx
+    mul ax; sqr(cx)
+    cmp ax, bx
+    jg sqrtloopend; if (sqr(cx)>v): break
+    
+    inc cx
+    jmp sqrtloop; loopback while(true)
+
+sqrtloopend:
+    sub cx, 1
+    mov ax, cx
+    
+    pop bx
+    pop cx
+    ret
+STC_sqrt endp
