@@ -5,14 +5,14 @@ jmp start
 ;==================================================================================================
 .DATA
 titlestr db '[Statistical Calculator v1.0.1.0]$'
-szpmtstr db 'Enter population size (INT) (MAX=10): $'
+szpmtstr db 'Enter population size (INT) (MAX=9): $'
 msgstr db 'Requesting sample values:$'
 inpmtstr db "Enter value for sample $"
 msg2 db " (INT) (UNSIGNED DECIMAL) (MAX=9): $"
 sample_buffer dw 10 DUP(0)
 printarr_str db "Samples: $"
 sorted_str db "Sorted: $"
-sp_v_set_str db "Sample values set$"
+sp_v_set_str db "Sample values set [OK]$"
 divider_str db "[==============================================================]$"
 count_str db "Count: $"
 mean_str db "Arithmetic Mean: $"
@@ -23,12 +23,15 @@ minstr db "Min: $"
 sdstr db "Standard deviation (Sigma): $"
 varstr db "Variance (Sigma^2): $"
 endstr db "[PROGRAM END]$"
+teamstr db "[Software by: GROUP 12]$"
+discstr db "NOTE: INTEGER MATHEMATICS ONLY$"
 ;==================================================================================================
 .CODE
 
 INCLUDE "qsort.asm"
 INCLUDE "mean.asm"
 INCLUDE "utils.asm"
+INCLUDE "mode.asm"
 
 NEWLINE macro
     ;newline
@@ -107,21 +110,21 @@ inp_loop:
     lea dx, inpmtstr
     call print
 
+    mov al, cl
+    call itoch
+    mov dl, al
+    mov ah,02h
+    int 21h
+    
+    mov dl, '/'
+    int 21h
+    
     ; fmt nums
     pop ax
     push ax
     call itoch
     mov dl, al
     mov ah, 02h
-    int 21h
-    
-    mov dl, '/'
-    int 21h
-    
-    mov al, cl
-    call itoch
-    mov dl, al
-    mov ah,02h
     int 21h
     
     lea dx, msg2
@@ -187,6 +190,7 @@ endprintloop:
     ret
 printArr endp
 
+; TODO: bad design
 callQsort proc
     ; prep to call qsort-----
     ; save registers ==
@@ -233,13 +237,35 @@ callQsort endp
 ; sqrt of v : AX
 ; returns AX: sqrt(v)
 STC_sqrt proc
+    push cx
+    push bx
+    
+    mov bx, ax; bx = v
+    mov cx, 1
+    
+sqrtloop:
+    
+    mov ax, cx
+    mul ax; sqr(cx)
+    cmp ax, bx
+    jg sqrtloopend; if (sqr(cx)>v): break
+    
+    inc cx
+    jmp sqrtloop; loopback while(true)
+
+sqrtloopend:
+    sub cx, 1
+    mov ax, cx
+    
+    pop bx
+    pop cx
     ret
 STC_sqrt endp
     
 computePopulationStandardDeviation proc
     ;TEMP=================
-    mov ax, 6
-    ret
+    ;mov ax, 3
+    ;ret
     ;TEMP=================
     push dx
     push cx
@@ -265,7 +291,9 @@ sdloop:
     sub cx, dx; xi - mu
     
     xchg cx, ax; ax -> diff, cx -> numer
+    push dx
     mul ax; diff squared
+    pop dx
     xchg cx,  ax; cx -> diff, ax -> numer
     
     add ax, cx; numerator += diff
@@ -278,8 +306,10 @@ sdloop:
     jnz sdloop:
 endsdloop:
     pop cx; restore orig arr_sz
+    xor dx, dx
     div cx; numerator/arr_sz
     
+    ; the quotient is in AX
     call STC_sqrt
     
     pop si
@@ -288,13 +318,31 @@ endsdloop:
     ret
 computePopulationStandardDeviation endp
 
-
+;=================================== PROGRAM START==============================
 start:
 mov ax, cs
 mov ds, ax
-xor ax,ax
+xor ax, ax
+
+; TEMP====================
+mov ax, 9
+call STC_sqrt
+xor ax, ax
+; TEMP====================
+
+lea dx, divider_str
+call println
 
 lea dx, titlestr
+call println
+
+lea dx, teamstr
+call println
+
+lea dx, discstr
+call println
+
+lea dx, divider_str
 call println
 
 call getSampleArr
@@ -359,12 +407,44 @@ int 21h
 NEWLINE
 
 ; display MEDIAN =====================
+pop ax; arr_sz
+push ax; save arr_sz
+
+mov bx, OFFSET sample_buffer
+xchg ax, bx
+call STC_computeMedian
+push ax; save median
+
 lea dx, median_str
-call println
+call print
+
+pop ax; restore median
+call itoch
+mov dx, ax
+mov ah, 02h
+int 21h
+
+NEWLINE
 
 ; display MODE =========================
+pop ax; arr_sz
+push ax; save arr_sz
+
+mov bx, OFFSET sample_buffer
+xchg ax, bx
+call STC_computeMode
+push ax; save mode
+
 lea dx, mode_str
-call println
+call print
+
+pop ax; restore mode
+call itoch
+mov dx, ax
+mov ah, 02h
+int 21h
+
+NEWLINE
 
 ; display MAX ===========================
 pop ax; arr_sz
@@ -442,9 +522,13 @@ int 21h
 
 NEWLINE
 ; END =========================================
+lea dx, divider_str
+call println
+
 lea dx, endstr
 call println
+
 ;========================================
 
-mov ah, 4Ch
+mov ah, 4Ch; return to OS
 int 0x21
