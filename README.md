@@ -23,12 +23,12 @@ output (on supported languages).
 ## Technical:
 The program has implementations in 3 languages:
 - C 17
-- Aarch32
-- 8086 ISA
+- ARMv4T Assembly
+- x86-16 Assembly
 
 ### Platforms:
-The C17 implementation is a robust codebase that can be compiled to any target platform via a suitable compiler. It is tested on AMD64 platform on an Intel Core i7 10750H CPU on Windows 10, built by clang 18.1.8.
+The C17 implementation can be compiled to any target platform via a suitable compiler. It is tested on AMD64 platform on an Intel Core i7 10750H CPU on Windows 10, built by clang 18.1.8.
 
-The 8086 ISA implementation is tailored for the Intel 8086 microprocessor.
+The x86-16 ISA assembly implementation is tailored for the Intel 8086 microprocessor.
 
-The Aarch32 implementation is tailored for the ARM7 microprocessor.
+The ARMv4T ISA assembly implementation is tailored for the ARM7TDMI microprocessor.
