@@ -23,7 +23,7 @@ output (on supported languages).
 ## Technical:
 The program has implementations in 3 languages:
 - C 17
-- ARMv4T Assembly
+- ARMv4T Assembly (WIP)
 - x86-16 Assembly
 
 ### Platforms:
