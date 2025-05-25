@@ -1,87 +1,67 @@
-;--------------MODE--------------
-;; compute void find_mode(arr_seg_idx, arr_size)
-; scratch registers: AX, BX, CX, DX, SI, DI
-;most frequent occuring value stored in AL
-;-------------------------------------------------
-
-;org 100h
-;
-;.MODEL SMALL
-;.DATA
-;nums    DB 10, 20, 30, 20, 10    ; Array of 5 bytes
-;max_count DB 0                   ; Highest frequency found
-;mode_val  DB 0                   ; Mode value (most frequent)
-;
-;.CODE
-;MAIN:
-;    MOV AX, @DATA
-;    MOV DS, AX
-;
-;    MOV SI, 0                   ; SI = i = 0 (outer loop index)
-;
-;outer_loop:
-;    CMP SI, 5                   ; Check if i >= 5
-;    JGE done                    ; If yes, exit loop (Jump if Greater or Equal)
-;
-;    MOV AL, nums[SI]            ; AL = nums[i] (current number)
-;    MOV BL, AL                  ; BL = current number to compare
-;    MOV CL, 0                   ; CL = count = 0
-;    MOV DI, 0                   ; DI = j = 0 (inner loop index)
-;
-;inner_loop:
-;    CMP DI, 5                   ; If j >= 5, end inner loop
-;    JGE check_count
-;
-;    MOV AL, nums[DI]            ; AL = nums[j]
-;    CMP AL, BL                  ; Compare nums[j] with nums[i]
-;    JNE skip_count              ;Jump if Not Equal
-;
-;    INC CL                      ; count++
-;
-;skip_count:
-;    INC DI                      ; j++
-;    JMP inner_loop              ; Repeat inner loop
-;
-;check_count:
-;    MOV AL, max_count
-;    CMP CL, AL                  ; Compare count with max_count
-;    JBE skip_update             ; If count <= max_count, skip update
-;                                ; Jump if Below or Equal 
-;    MOV max_count, CL           ; max_count = count
-;    MOV mode_val, BL            ; mode = current number
-;
-;skip_update:
-;    INC SI                      ; i++
-;    JMP outer_loop              ; Repeat outer loop
-;
-;done:
-;    MOV AL, mode_val            ; Mode value in AL
-;
-;exit:
-;    HLT                         ; End program (HLT used for demonstration)
-;
-;END MAIN
-;
-;
-;ret
-;
-
-; DUMMY ============================================
-
-; int STC_computeMedian(arr_seg_offset, arr_size)
-; arr_seg_offset : AX
-; arr_size : BX
-; returns median value : AX
-STC_computeMedian proc
-mov ax, 0; DEBUG DUMMY
-ret
-STC_computeMedian endp
-
-; int STC_computeMode(arr_seg_offset, arr_size)
-; arr_seg_offset : AX
-; arr_size : BX
-; returns mode value : AX
 STC_computeMode proc
-mov ax, 0; DEBUG DUMMY
-ret
+    push cx
+    push dx
+    push si
+    push di
+    push bp
+
+    mov si, ax          ; SI = base address of array
+    mov cx, bx          ; CX = array size (number of words)
+
+    xor bp, bp          ; BP = max frequency
+    xor dx, dx          ; DX = mode value
+
+    xor di, di          ; DI = outer loop index (i = 0)
+
+outer_loop:
+    cmp di, cx
+    jge done_mode       ; finished
+
+    ; load value at array[i]
+    mov bx, di
+    shl bx, 1           ; bx = i*2 (byte offset)
+    mov ax, word ptr [si + bx]
+
+    xor bx, bx          ; bx = frequency count = 0
+
+    xor dx, dx          ; dx = inner loop index j = 0
+
+inner_loop:
+    cmp dx, cx
+    jge check_freq      ; done inner loop
+
+    mov bx, dx
+    shl bx, 1           ; bx = j*2
+    mov di, word ptr [si + bx] ; load array[j] into di
+
+    cmp ax, di
+    jne skip_inc_freq
+
+    inc bx               ; increment frequency count in BX
+
+skip_inc_freq:
+    inc dx
+    jmp inner_loop
+
+check_freq:
+    cmp bx, bp
+    jle next_outer
+
+    mov bp, bx          ; update max frequency
+    mov dx, ax          ; update mode value
+
+next_outer:
+    inc di
+    jmp outer_loop
+
+done_mode:
+    mov ax, dx          ; return mode value in AX
+
+    pop bp
+    pop di
+    pop si
+    pop dx
+    pop cx
+    ret
 STC_computeMode endp
+endp
