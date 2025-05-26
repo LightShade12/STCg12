@@ -78,4 +78,4 @@ endmodeloop:
 
     pop bp
     ret
-GTC_computeMode endp
+STC_computeMode endp

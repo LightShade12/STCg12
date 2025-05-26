@@ -202,7 +202,7 @@ push ax; save arr_sz
 
 mov bx, OFFSET sample_buffer
 xchg ax, bx; ax -> arr_seg_offset; bx-> arr_sz
-call GTC_computeMode; returns mode in AX
+call STC_computeMode; returns mode in AX
 
 lea dx, mode_str
 call print
