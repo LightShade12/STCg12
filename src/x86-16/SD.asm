@@ -1,8 +1,10 @@
-computePopulationStandardDeviation proc
-    ;TEMP=================
-    ;mov ax, 3
-    ;ret
-    ;TEMP=================
+
+; int STC_computePopulationStandardDeviation(arr_seg_offset, arr_size)
+; arr_seg_offset : AX
+; arr_size : BX
+; returns population_standard_deviation : AX
+STC_computePopulationStandardDeviation proc
+
     push dx
     push cx
     push si
@@ -52,4 +54,4 @@ endsdloop:
     pop cx
     pop dx
     ret
-computePopulationStandardDeviation endp
+STC_computePopulationStandardDeviation endp

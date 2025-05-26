@@ -40,7 +40,7 @@ INCLUDE "median.asm"
 INCLUDE "SD.asm"
 
 ; returns arr_size : AX
-getSampleArr proc
+querySampleArray proc
     lea dx, usr_size_prompt_str
     call print
 
@@ -103,7 +103,7 @@ inp_loop_end:
     
     pop ax; return arr_size
     ret
-getSampleArr endp
+querySampleArray endp
 
 ;=================================== PROGRAM START==============================
 start:
@@ -129,7 +129,7 @@ lea dx, divider_str
 call println
 
 ; call sample collection procedure
-call getSampleArr; will return arr_size to AX
+call querySampleArray; will return arr_size to AX
 push ax; for print
 
 ;=====PRINT ARRAY========================
@@ -246,7 +246,7 @@ NEWLINE
 pop ax; arr_sz
 mov bx, OFFSET sample_buffer
 xchg ax, bx
-call computePopulationStandardDeviation
+call STC_computePopulationStandardDeviation
 
 lea dx, standard_deviation_str
 call print
