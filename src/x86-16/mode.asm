@@ -1,67 +1,81 @@
+;problematic inputs:  3 3 1 5 2
+
+; int STC_computeMode(arr_seg_offset, arr_size) 
+; arr_seg_offset : AX
+; arr_size : BX
+; returns median : AX
 STC_computeMode proc
-    push cx
+    push bp; save prev bp
+    mov bp, sp; setup frame pointer
+
+    ; save scratch regs
     push dx
+    push cx
+    push bx
     push si
-    push di
-    push bp
 
-    mov si, ax          ; SI = base address of array
-    mov cx, bx          ; CX = array size (number of words)
+    mov cx, bx; cx = arr_sz; 
+    mov bx, ax; bx = arr_seg_offset; 
+    mov si, 0; idx
+    push bx; save arr_seg_offset to CONSTANT DATA [bp-10]
 
-    xor bp, bp          ; BP = max frequency
-    xor dx, dx          ; DX = mode value
+    mov ax, 0; last val
+    mov dx, 0; cur reps
 
-    xor di, di          ; DI = outer loop index (i = 0)
+    push ax; mode val = 0
+    push dx; mode reps = 0
 
-outer_loop:
-    cmp di, cx
-    jge done_mode       ; finished
+    mov ax, 0xFFFF; init last val (-1)
 
-    ; load value at array[i]
-    mov bx, di
-    shl bx, 1           ; bx = i*2 (byte offset)
-    mov ax, word ptr [si + bx]
+modeloop:
+    push cx; save arr_sz
+    mov cx, word ds[bx+si]; fetch cx = curr val
 
-    xor bx, bx          ; bx = frequency count = 0
+    cmp cx, ax
+    je seq_repeat ; last == curr
+    jne seq_break ; last != curr
 
-    xor dx, dx          ; dx = inner loop index j = 0
+seq_repeat:
+    inc dx; curr_reps++
+    jmp end_seq_break
 
-inner_loop:
-    cmp dx, cx
-    jge check_freq      ; done inner loop
+seq_break:
+    mov dx, 1
 
-    mov bx, dx
-    shl bx, 1           ; bx = j*2
-    mov di, word ptr [si + bx] ; load array[j] into di
+end_seq_break:
+    mov ax, cx; last = curr
+    pop cx; restore arr_sz
 
-    cmp ax, di
-    jne skip_inc_freq
+    pop bx; bx = modereps
+    cmp bx, dx
+    jg skip_mode_update; if modereps > currreps
+    mov bx, dx; modereps = curreps
+    pop dx; dx = modeval
+    mov dx, ax; mode = curr; redundant ig
+    push dx; save modeval
 
-    inc bx               ; increment frequency count in BX
+skip_mode_update: 
 
-skip_inc_freq:
-    inc dx
-    jmp inner_loop
+    push bx; save modereps
+    mov bx, [bp-10]; restore arr_seg_offset from CONSTANT_DATA
 
-check_freq:
-    cmp bx, bp
-    jle next_outer
+    inc si
+    inc si
 
-    mov bp, bx          ; update max frequency
-    mov dx, ax          ; update mode value
+    dec cx
+    jnz modeloop
+endmodeloop:
+    pop ax ; modereps
+    pop ax; mode val
 
-next_outer:
-    inc di
-    jmp outer_loop
+    pop bx; clean CONSTANT DATA 
 
-done_mode:
-    mov ax, dx          ; return mode value in AX
+    ;restore scratch regs
+    pop si
+    pop bx
+    pop cx
+    pop dx
 
     pop bp
-    pop di
-    pop si
-    pop dx
-    pop cx
     ret
-STC_computeMode endp
-endp
+GTC_computeMode endp

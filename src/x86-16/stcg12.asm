@@ -9,15 +9,17 @@ jmp start
 sample_buffer dw 10 DUP(0)
 
 ; STRINGS FOR PRINTING 
+divider_str db "[==============================================================]$"
 prog_title_str db '[Statistical Calculator v1.0.1.0]$'
+team_name_str db "[Software by: GROUP 12]$"
+note1_str db "NOTE: INTEGER MATHEMATICS ONLY$"
 usr_size_prompt_str db 'Enter population size (INT) (MAX=9): $'
 input_loop_heading_str db 'Requesting sample values:$'
 usr_sample_prompt_beg_str db "Enter value for sample $"
 usr_sample_prompt_end_str db " (INT) (UNSIGNED DECIMAL) (MAX=9): $"
+input_confirm_str db "Sample values set [OK]$"
 arr_print_str db "Samples: $"
 arr_sorted_print_str db "Sorted: $"
-input_confirm_str db "Sample values set [OK]$"
-divider_str db "[==============================================================]$"
 count_str db "Count: $"
 mean_str db "Arithmetic Mean: $"
 median_str db "Arithmetic Median: $"
@@ -27,8 +29,6 @@ arr_min_str db "Min: $"
 standard_deviation_str db "Standard deviation (Sigma): $"
 variance_str db "Variance (Sigma^2): $"
 prog_end_str db "[PROGRAM END]$"
-team_name_str db "[Software by: GROUP 12]$"
-note1_str db "NOTE: INTEGER MATHEMATICS ONLY$"
 ;==================================================================================================
 .CODE
 
@@ -36,6 +36,7 @@ INCLUDE "qsort.asm"
 INCLUDE "mean.asm"
 INCLUDE "utils.asm"
 INCLUDE "mode.asm"
+INCLUDE "median.asm"
 INCLUDE "SD.asm"
 
 ; returns arr_size : AX
@@ -171,7 +172,7 @@ NEWLINE
 push ax; save arr_sz
 mov bx, ax ;arr_sz(words)
 mov ax, OFFSET sample_buffer ;arr_seg_offset
-call STC_computeMean
+call STC_computeMean; retuns mean in AX
 
 lea dx, mean_str
 call print
@@ -200,8 +201,8 @@ pop ax; arr_sz
 push ax; save arr_sz
 
 mov bx, OFFSET sample_buffer
-xchg ax, bx
-call STC_computeMode; returns mode in AX
+xchg ax, bx; ax -> arr_seg_offset; bx-> arr_sz
+call GTC_computeMode; returns mode in AX
 
 lea dx, mode_str
 call print
