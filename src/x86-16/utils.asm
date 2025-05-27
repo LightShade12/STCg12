@@ -245,3 +245,40 @@ sqrtloopend:
     pop cx
     ret
 STC_sqrt endp
+
+; int STC_computeSum(arr_seg_offset, arr_size)
+; arr_seg_offset : AX
+; arr_size : BX
+; returns sum of elements : AX
+STC_computeSum proc
+
+    ; save scratch regs
+    push dx
+    push cx
+    push bx
+    push si
+    
+    mov cx, bx; cx = arr_size
+    mov bx, ax; bx = arr_seg_offset
+    xor ax, ax; sum
+    mov si, 0; idx
+    
+sumloop:
+    
+    mov dx, word ds[bx+si]
+    add ax, dx
+    
+    inc si
+    inc si; idx++
+    
+    dec cx
+    jnz sumloop
+endsumloop:
+    
+    ; restore scratch regs
+    pop si
+    pop bx
+    pop cx
+    pop dx
+    ret
+STC_computeSum endp

@@ -21,6 +21,7 @@ input_confirm_str db "Sample values set [OK]$"
 arr_print_str db "Samples: $"
 arr_sorted_print_str db "Sorted: $"
 count_str db "Count: $"
+sum_str db "Sum: $"
 mean_str db "Arithmetic Mean: $"
 median_str db "Arithmetic Median: $"
 mode_str db "Mode: $"
@@ -167,8 +168,21 @@ pop ax; restore arr_sz
 call printNum
 
 NEWLINE
+; display SUM ===========================
+push ax; save arr_sz
+mov bx, ax ;arr_sz(words)
+mov ax, OFFSET sample_buffer ;arr_seg_offset
+call STC_computeSum; returns sum in AX
+
+lea dx, sum_str
+call print
+
+call printNum
+
+NEWLINE
 
 ; display MEAN =========================
+pop ax; restore arr_sz
 push ax; save arr_sz
 mov bx, ax ;arr_sz(words)
 mov ax, OFFSET sample_buffer ;arr_seg_offset
