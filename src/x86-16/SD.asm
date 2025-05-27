@@ -48,6 +48,7 @@ endsdloop:
     div cx; numerator/arr_sz
     
     ; the quotient is in AX
+    mov di, ax
     call STC_sqrt
     
     pop si

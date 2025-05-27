@@ -7,14 +7,17 @@ jmp start
 
 ; MEMORY BLOCK
 sample_buffer dw 10 DUP(0)
+SCANF_MAX_LEN db 20
+scanf_buffer db 21 DUP(0)
+int_buffer db 21 DUP(0)
 
 ; STRINGS FOR PRINTING 
 divider_str db "[==============================================================]$"
-prog_title_str db '[Statistical Calculator v1.0.1.0]$'
+prog_title_str db "[Statistical Calculator v1.0.1.0]$"
 team_name_str db "[Software by: GROUP 12]$"
 note1_str db "NOTE: INTEGER MATHEMATICS ONLY$"
-usr_size_prompt_str db 'Enter population size (INT) (MAX=9): $'
-input_loop_heading_str db 'Requesting sample values:$'
+usr_size_prompt_str db "Enter population size (INT) (MAX=9): $"
+input_loop_heading_str db "Requesting sample values:$"
 usr_sample_prompt_beg_str db "Enter value for sample $"
 usr_sample_prompt_end_str db " (INT) (UNSIGNED DECIMAL) (MAX=9): $"
 input_confirm_str db "Sample values set [OK]$"
@@ -67,7 +70,7 @@ inp_loop:
     mov al, cl
     call itoch
     mov dl, al
-    mov ah,02h
+    mov ah, 02h
     int 21h
     
     mov dl, '/'
@@ -108,189 +111,206 @@ querySampleArray endp
 
 ;=================================== PROGRAM START==============================
 start:
-; setup ds
-mov ax, cs
-mov ds, ax
-xor ax, ax
+    ; setup ds
+    mov ax, cs
+    mov ds, ax
+    xor ax, ax
 
-; decorative prints
-lea dx, divider_str
-call println
+    ; scanf proc
+    mov al, SCANF_MAX_LEN
+    mov si, ax
+    lea di, scanf_buffer
+    call scanf
+    
+    lea di, [scanf_buffer+2]
+    call sttoi
 
-lea dx, prog_title_str
-call println
+    NEWLINE
+    ; accessing input
+    lea dx, [scanf_buffer+2]
+    call println
+    
+    ret
 
-lea dx, team_name_str
-call println
+    ; decorative prints
+    lea dx, divider_str
+    call println
 
-lea dx, note1_str
-call println
+    lea dx, prog_title_str
+    call println
 
-lea dx, divider_str
-call println
+    lea dx, team_name_str
+    call println
 
-; call sample collection procedure
-call querySampleArray; will return arr_size to AX
-push ax; for print
+    lea dx, note1_str
+    call println
 
-;=====PRINT ARRAY========================
+    lea dx, divider_str
+    call println
 
-lea dx, arr_print_str
-call print
+    ; call sample collection procedure
+    call querySampleArray; will return arr_size to AX
+    push ax; for print
 
-; pass args
-mov bx, ax
-mov ax, OFFSET sample_buffer
-call printArr
+    ;=====PRINT ARRAY========================
 
-;=======PRINT SORTED ARRAY=====================
+    lea dx, arr_print_str
+    call print
 
-lea dx, arr_sorted_print_str
-call print
-pop ax; arr_sz
+    ; pass args
+    mov bx, ax
+    mov ax, OFFSET sample_buffer
+    call printArr
 
-; qsort here
-call callQsort
+    ;=======PRINT SORTED ARRAY=====================
 
-push ax; save arr_sz
-; pass args
-mov bx, ax
-mov ax, OFFSET sample_buffer
-call printArr
+    lea dx, arr_sorted_print_str
+    call print
+    pop ax; arr_sz
 
-; display COUNT =============================
+    ; qsort here
+    call callQsort
 
-lea dx, count_str
-call print
+    push ax; save arr_sz
+    ; pass args
+    mov bx, ax
+    mov ax, OFFSET sample_buffer
+    call printArr
 
-pop ax; restore arr_sz
+    ; display COUNT =============================
 
-call printNum
+    lea dx, count_str
+    call print
 
-NEWLINE
-; display SUM ===========================
-push ax; save arr_sz
-mov bx, ax ;arr_sz(words)
-mov ax, OFFSET sample_buffer ;arr_seg_offset
-call STC_computeSum; returns sum in AX
+    pop ax; restore arr_sz
 
-lea dx, sum_str
-call print
+    call printNum
 
-call printNum
+    NEWLINE
+    ; display SUM ===========================
+    push ax; save arr_sz
+    mov bx, ax ;arr_sz(words)
+    mov ax, OFFSET sample_buffer ;arr_seg_offset
+    call STC_computeSum; returns sum in AX
 
-NEWLINE
+    lea dx, sum_str
+    call print
 
-; display MEAN =========================
-pop ax; restore arr_sz
-push ax; save arr_sz
-mov bx, ax ;arr_sz(words)
-mov ax, OFFSET sample_buffer ;arr_seg_offset
-call STC_computeMean; retuns mean in AX
+    call printNum
 
-lea dx, mean_str
-call print
+    NEWLINE
 
-call printNum
+    ; display MEAN =========================
+    pop ax; restore arr_sz
+    push ax; save arr_sz
+    mov bx, ax ;arr_sz(words)
+    mov ax, OFFSET sample_buffer ;arr_seg_offset
+    call STC_computeMean; retuns mean in AX
 
-NEWLINE
+    lea dx, mean_str
+    call print
 
-; display MEDIAN =====================
-pop ax; arr_sz
-push ax; save arr_sz
+    call printNum
 
-mov bx, OFFSET sample_buffer
-xchg ax, bx
-call STC_computeMedian; returns median in AX
+    NEWLINE
 
-lea dx, median_str
-call print
+    ; display MEDIAN =====================
+    pop ax; arr_sz
+    push ax; save arr_sz
 
-call printNum; AX has Median value
+    mov bx, OFFSET sample_buffer
+    xchg ax, bx
+    call STC_computeMedian; returns median in AX
 
-NEWLINE
+    lea dx, median_str
+    call print
 
-; display MODE =========================
-pop ax; arr_sz
-push ax; save arr_sz
+    call printNum; AX has Median value
 
-mov bx, OFFSET sample_buffer
-xchg ax, bx; ax -> arr_seg_offset; bx-> arr_sz
-call STC_computeMode; returns mode in AX
+    NEWLINE
 
-lea dx, mode_str
-call print
+    ; display MODE =========================
+    pop ax; arr_sz
+    push ax; save arr_sz
 
-call printNum;AX has mode value
+    mov bx, OFFSET sample_buffer
+    xchg ax, bx; ax -> arr_seg_offset; bx-> arr_sz
+    call STC_computeMode; returns mode in AX
 
-NEWLINE
+    lea dx, mode_str
+    call print
 
-; display MAX ===========================
-pop ax; arr_sz
-push ax; save arr_sz
+    call printNum;AX has mode value
 
-mov bx, OFFSET sample_buffer
-mov si, 2
-mul si; ax = bytesize = 2 * arr_size
-dec ax; ax--
-dec ax; ax = offset (size-1)
-mov si, ax
-mov ax, word ds[bx+si]; end element
+    NEWLINE
 
-lea dx, arr_max_str
-call print
+    ; display MAX ===========================
+    pop ax; arr_sz
+    push ax; save arr_sz
 
-call printNum
+    mov bx, OFFSET sample_buffer
+    mov si, 2
+    mul si; ax = bytesize = 2 * arr_size
+    dec ax; ax--
+    dec ax; ax = offset (size-1)
+    mov si, ax
+    mov ax, word ds[bx+si]; end element
 
-NEWLINE
-; display MIN =============================
-pop ax; arr_sz
-push ax; save arr_sz
-mov bx, OFFSET sample_buffer
-mov ax, word ds[bx]; beginning element
+    lea dx, arr_max_str
+    call print
 
-lea dx, arr_min_str
-call print
+    call printNum
 
-call printNum
+    NEWLINE
+    ; display MIN =============================
+    pop ax; arr_sz
+    push ax; save arr_sz
+    mov bx, OFFSET sample_buffer
+    mov ax, word ds[bx]; beginning element
 
-NEWLINE
-; display SD =============================
+    lea dx, arr_min_str
+    call print
 
-pop ax; arr_sz
-mov bx, OFFSET sample_buffer
-xchg ax, bx
-call STC_computePopulationStandardDeviation
+    call printNum
 
-lea dx, standard_deviation_str
-call print
+    NEWLINE
+    ; display SD =============================
 
-push ax; save SD for variance
-call printNum
+    pop ax; arr_sz
+    mov bx, OFFSET sample_buffer
+    xchg ax, bx
+    call STC_computePopulationStandardDeviation
 
-NEWLINE
-; display VARIANCE =============================
+    lea dx, standard_deviation_str
+    call print
 
-pop ax; restore SD
-mul ax; VAR = SQR(SD)
+    push ax; save SD for variance
+    call printNum
 
-lea dx, variance_str
-call print
+    NEWLINE
+    ; display VARIANCE =============================
 
-call printNum
+    pop ax; restore SD
+    mul ax; VAR = SQR(SD)
 
-NEWLINE
-; END =========================================
-; decorative prints
-lea dx, divider_str
-call println
+    lea dx, variance_str
+    call print
 
-lea dx, prog_end_str
-call println
+    call printNum
 
-;================================================
+    NEWLINE
+    ; END =========================================
+    ; decorative prints
+    lea dx, divider_str
+    call println
 
-mov ah, 4Ch; return to OS
-int 0x21
+    lea dx, prog_end_str
+    call println
+
+    ;================================================
+
+    mov al, 0; exit code: EXIT_SUCCESS
+    mov ah, 0x4C; return to OS
+    int 0x21
 
 ; PROGRAM END ===================================================================

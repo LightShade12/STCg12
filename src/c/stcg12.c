@@ -334,10 +334,8 @@ SMPLC_INP:
                        STC_computeMedian(sample_data_buffer, sample_size));
         (void)printf_s("Mode: %d\n",
                        STC_computeMode(sample_data_buffer, sample_size));
-        (void)printf_s("Max: %d\n",
-                       STC_max_array(sample_data_buffer, sample_size));
-        (void)printf_s("Min: %d\n",
-                       STC_min_array(sample_data_buffer, sample_size));
+        (void)printf_s("Max: %d\n", sample_data_buffer[sample_size - 1]);
+        (void)printf_s("Min: %d\n", sample_data_buffer[0]);
         (void)printf_s("Standard Deviation(rho): %.3f\n",
                        STC_computePopulationStandardDeviation(
                            sample_data_buffer, sample_size));
