@@ -116,21 +116,28 @@ start:
     mov ds, ax
     xor ax, ax
 
-    ; scanf proc
-    mov al, SCANF_MAX_LEN
-    mov si, ax
-    lea di, scanf_buffer
-    call scanf
+    ;; scanf proc
+    ;mov al, SCANF_MAX_LEN
+    ;mov si, ax
+    ;lea di, scanf_buffer
+    ;call scanf
     
-    lea di, [scanf_buffer+2]
-    call sttoi
+    ;lea di, [scanf_buffer+2]
+    ;call sttoi
 
-    NEWLINE
-    ; accessing input
-    lea dx, [scanf_buffer+2]
-    call println
+    ;mov si, ax
+    ;lea di, int_buffer
+    ;call ittost
+
+    ;NEWLINE
+    ;lea dx, int_buffer
+    ;call println
+
+    ;; accessing input
+    ;lea dx, [scanf_buffer+2]
+    ;call println
     
-    ret
+    ;ret
 
     ; decorative prints
     lea dx, divider_str
@@ -184,9 +191,13 @@ start:
 
     pop ax; restore arr_sz
 
-    call printNum
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
+
     ; display SUM ===========================
     push ax; save arr_sz
     mov bx, ax ;arr_sz(words)
@@ -196,9 +207,12 @@ start:
     lea dx, sum_str
     call print
 
-    call printNum
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
 
     ; display MEAN =========================
     pop ax; restore arr_sz
@@ -210,9 +224,12 @@ start:
     lea dx, mean_str
     call print
 
-    call printNum
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
 
     ; display MEDIAN =====================
     pop ax; arr_sz
@@ -225,9 +242,12 @@ start:
     lea dx, median_str
     call print
 
-    call printNum; AX has Median value
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
 
     ; display MODE =========================
     pop ax; arr_sz
@@ -240,9 +260,12 @@ start:
     lea dx, mode_str
     call print
 
-    call printNum;AX has mode value
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
 
     ; display MAX ===========================
     pop ax; arr_sz
@@ -259,9 +282,13 @@ start:
     lea dx, arr_max_str
     call print
 
-    call printNum
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
+
     ; display MIN =============================
     pop ax; arr_sz
     push ax; save arr_sz
@@ -271,9 +298,13 @@ start:
     lea dx, arr_min_str
     call print
 
-    call printNum
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
+
     ; display SD =============================
 
     pop ax; arr_sz
@@ -285,9 +316,14 @@ start:
     call print
 
     push ax; save SD for variance
-    call printNum
 
-    NEWLINE
+    mov si, ax
+    lea di, int_buffer
+    call ittost
+
+    lea dx, int_buffer
+    call println
+
     ; display VARIANCE =============================
 
     pop ax; restore SD
@@ -296,9 +332,13 @@ start:
     lea dx, variance_str
     call print
 
-    call printNum
+    mov si, ax
+    lea di, int_buffer
+    call ittost
 
-    NEWLINE
+    lea dx, int_buffer
+    call println
+
     ; END =========================================
     ; decorative prints
     lea dx, divider_str

@@ -225,17 +225,46 @@ scanf endp
 ; int : al
 ; return char : al
 itoch proc
-    push bx
-    mov bl, al
-    mov ax, 0
-    add bl, '0'; '0'
-    mov al, bl
-    pop bx
+    mov ah, 0
+    add al, '0'; map to char representation
     ret
 itoch endp
 
-; ONLY WORKS FOR DECIMAL DIGITS
-; write to DS:DX
+; void hex2Dec(str_seg_offset, num)
+; num : AX
+; str_seg_offset : SI
+;hex2Dec proc near
+;
+;    mov cx, 0; out_str_len
+;    mov bx, 10; dec base
+;   
+;loop1:; conversion loop
+;    mov dx, 0; dec num
+;
+;    div bx; num1(ax) = num0(ax) / 10
+;    ; dx = remainder (dec num)
+;    ; num0 = num1 * 10 + dx
+;
+;    add dl, '0'; map to char representation 
+;    push dx; save dec char
+;    inc cx; out_str_len++
+;
+;    cmp ax, 9; check if al number is decimal digit
+;    jg loop1; ax/=10 till ax < 9
+;     
+;    add al, 30h; map to char reprentation
+;    mov [si], al; write to str_buff
+;     
+;writer_loop: 
+;    pop ax; fetch dec char
+;    inc si
+;    mov [si],al; write to str_buffer
+;    loop writer_loop; loop till out_str_len written(cx--)
+;    ret
+;
+;hex2Dec endp           
+
+; write to DS:DI
 ; void ittost(buff_addr, val)
 ; buff_addr : DI
 ; val : SI
@@ -243,20 +272,42 @@ ittost proc
     push bp
     mov bp, sp
     push bx
-    sub sp, 32
+    push ax
+    sub sp, 32; 16 numbers
 
     mov bx, di; bx = buff_seg_offset
-    mov word ptr [bp-4], si; value
+    mov ax, si; ax = value
+    mov word ptr [bp-8], 10; dec base
     mov si, 0
+    mov cx, 0; str_out_len
 
-itostrloop:
-    mov ax, word ptr [bp-4]; value
-    and ax, 0xF000
-    shr ax, 3*4; hexadecimal MSD
+ittost_convert_loop:
+    mov dx, 0; dec num
+    div word ptr [bp-8]; ax/=10
+
+    add dl, '0'; map to char
+    push dx; save lsd dec char
+
+    inc cx; str_out_len++
+    cmp ax, 9
+    jg ittost_convert_loop; loop till al < 9
+
+    cmp ax, 0
+    je ittost_writer_loop
+    add al, '0'; map to char
+    mov byte ptr [bx+si], al; write msd to str_buff
     inc si
-enditostrloop:
+
+ittost_writer_loop:
+    pop ax; fetch dec char
+    mov byte ptr [bx+si], al;  write to string_buff
+    inc si
+loop ittost_writer_loop; loop till str_out_len written
+
+    mov byte ptr [bx+si], '$';  write terminator to string_buff
 
     add sp, 32
+    pop ax
     pop bx
     pop bp
     ret
@@ -269,6 +320,7 @@ ittost endp
 printNum proc
     push dx
     push ax
+
     call itoch
     mov dx, ax
     mov ah, 02h
