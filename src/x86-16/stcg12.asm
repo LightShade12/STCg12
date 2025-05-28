@@ -45,6 +45,10 @@ INCLUDE "SD.asm"
 
 ; returns arr_size : AX
 querySampleArray proc
+    push bp
+    mov bp, sp
+    sub sp, 32; 16 nums
+
     lea dx, usr_size_prompt_str
     call print
 
@@ -56,7 +60,7 @@ querySampleArray proc
     mov cx, 0
     mov cl, al; cl = arr_size
     push cx; save size
-    mov si, OFFSET sample_buffer
+    mov word ptr [bp-6], OFFSET sample_buffer
     
     NEWLINE
 
@@ -92,12 +96,24 @@ inp_loop:
     call print
 
     ; single inputs
-    mov ah, 01h
-    int 21h; input read
-    call chtoi
-    mov word [si], ax; write to sample_buffer
-    inc si
-    inc si
+    ;mov ah, 01h
+    ;int 21h; input read
+    ;call chtoi
+
+    ; scanf proc
+    mov al, SCANF_MAX_LEN
+    mov si, ax
+    lea di, scanf_buffer
+    call scanf
+    
+    lea di, [scanf_buffer+2]
+    call sttoi
+
+    ; write to sample_buffer
+    mov si, word ptr [bp-6]; sample_buffer_seg_offset
+    mov word [si], ax
+    inc word ptr [bp-6]
+    inc word ptr [bp-6]
 
     NEWLINE
 
@@ -110,6 +126,9 @@ inp_loop_end:
     call println
     
     pop ax; return arr_size to AX
+
+    add sp, 32
+    pop bp
     ret
 querySampleArray endp
 

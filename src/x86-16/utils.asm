@@ -230,40 +230,6 @@ itoch proc
     ret
 itoch endp
 
-; void hex2Dec(str_seg_offset, num)
-; num : AX
-; str_seg_offset : SI
-;hex2Dec proc near
-;
-;    mov cx, 0; out_str_len
-;    mov bx, 10; dec base
-;   
-;loop1:; conversion loop
-;    mov dx, 0; dec num
-;
-;    div bx; num1(ax) = num0(ax) / 10
-;    ; dx = remainder (dec num)
-;    ; num0 = num1 * 10 + dx
-;
-;    add dl, '0'; map to char representation 
-;    push dx; save dec char
-;    inc cx; out_str_len++
-;
-;    cmp ax, 9; check if al number is decimal digit
-;    jg loop1; ax/=10 till ax < 9
-;     
-;    add al, 30h; map to char reprentation
-;    mov [si], al; write to str_buff
-;     
-;writer_loop: 
-;    pop ax; fetch dec char
-;    inc si
-;    mov [si],al; write to str_buffer
-;    loop writer_loop; loop till out_str_len written(cx--)
-;    ret
-;
-;hex2Dec endp           
-
 ; write to DS:DI
 ; void ittost(buff_addr, val)
 ; buff_addr : DI
@@ -334,32 +300,41 @@ printNum endp
 ; arr_seg_offset : AX
 ; arr_size : BX
 printArr proc
+    push bp
+    mov bp, sp
+    sub sp, 32; 16
+
     push cx
     push si
     push bx
     push ax
     
-    mov si, 0
-    mov cx, bx
-    mov bx, ax
+    mov word ptr [bp-4], 0; index
+    mov cx, bx; arr_sz
+    mov bx, ax; arr_seg_offset
     xor ax, ax
     
 printloop:
-    
-    mov ax, word ds[bx+si]
-    call itoch
-    mov dl, al
-    mov ah, 02h
-    int 21h
-    
-    mov ah, 02h
+    push cx 
+    mov si, word ptr [bp-4]; load idx
+    mov ax, word ptr ds[bx+si]; fetch element
+
+    mov si, ax
+    lea di, int_buffer
+    call ittost; convert to str
+
+    lea dx, int_buffer
+    call print; print number
+   
     mov dl, ','
-    int 21h
+    mov ah, 02h
+    int 21h; print comma
     
-    inc si
-    inc si
+    inc word ptr [bp-4]
+    inc word ptr [bp-4]; index++
+
+    pop cx
     dec cx
-    
     jnz printloop
     
 endprintloop:
@@ -369,6 +344,10 @@ endprintloop:
     pop bx 
     pop si
     pop cx
+
+    add sp, 32
+    pop bp
+
     ret
 printArr endp
 
