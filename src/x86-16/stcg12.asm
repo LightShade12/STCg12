@@ -51,11 +51,11 @@ querySampleArray proc
     ; parse int
     mov ah, 0x1
     int 0x21
-    call chtoi
+    call chtoi; size in al
 
     mov cx, 0
-    mov cl, al; set arr_size
-    push cx
+    mov cl, al; cl = arr_size
+    push cx; save size
     mov si, OFFSET sample_buffer
     
     NEWLINE
@@ -63,41 +63,45 @@ querySampleArray proc
     lea dx, input_loop_heading_str
     call println
 
+; collection loop
 inp_loop:
     lea dx, usr_sample_prompt_beg_str
     call print
 
+    ; printing (cur/cap)
+    ; print curr
     mov al, cl
     call itoch
     mov dl, al
     mov ah, 02h
-    int 21h
+    int 21h; print
     
+    ; print the slash
     mov dl, '/'
-    int 21h
+    int 21h; print
     
-    ; fmt nums
-    pop ax
-    push ax
+    ; print capacity
+    pop ax;  orig arr_sz
+    push ax; save arr_sz
     call itoch
     mov dl, al
     mov ah, 02h
-    int 21h
+    int 21h; print
     
     lea dx, usr_sample_prompt_end_str
     call print
 
     ; single inputs
     mov ah, 01h
-    int 21h
+    int 21h; input read
     call chtoi
-    mov word ds[si], ax
+    mov word [si], ax; write to sample_buffer
     inc si
     inc si
 
     NEWLINE
 
-    dec cl
+    dec cl; dec curr
     jnz inp_loop
 inp_loop_end:
     lea dx, input_confirm_str
@@ -105,7 +109,7 @@ inp_loop_end:
     lea dx, divider_str
     call println
     
-    pop ax; return arr_size
+    pop ax; return arr_size to AX
     ret
 querySampleArray endp
 
