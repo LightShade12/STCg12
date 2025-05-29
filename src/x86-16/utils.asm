@@ -415,3 +415,25 @@ endsumloop:
     pop dx
     ret
 STC_computeSum endp
+
+; 1,048,576 bytes or 1 Megabyte (1MB)
+; segment is 64KB
+; fff7 : ffff
+; malloc
+; - allocates heap memory
+; 
+; int malloc(bytesize)
+; bytesize : DI
+; returns memory block address : AX
+malloc proc
+    push bp
+    mov bp, sp
+    sub sp, 32; 16 nums
+
+    mov word ptr [bp-2], 0xA00; segment offset
+    mov ax, word ptr [bp-2]
+
+    add sp, 32
+    pop bp
+    ret
+malloc endp

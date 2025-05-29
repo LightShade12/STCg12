@@ -7,6 +7,7 @@ jmp start
 
 ; MEMORY BLOCK
 sample_buffer dw 10 DUP(0)
+buffer_addr dw 0x0
 SCANF_MAX_LEN db 20
 scanf_buffer db 21 DUP(0)
 int_buffer db 21 DUP(0)
@@ -60,8 +61,15 @@ querySampleArray proc
     mov cx, 0
     mov cl, al; cl = arr_size
     push cx; save size
-    mov word ptr [bp-6], OFFSET sample_buffer
-    
+
+    mov ah, 0
+    mov dx, 2
+    mul dx; word size
+    mov di, ax; final bytesize
+    call malloc; just returns a segment offset
+    mov word ptr [bp-6], ax; buff_addr
+    mov word ptr [bp-8], ax; save original addr
+   
     NEWLINE
 
     lea dx, input_loop_heading_str
@@ -125,6 +133,7 @@ inp_loop_end:
     lea dx, divider_str
     call println
     
+    mov cx, word ptr [bp-8]; return arr_seg_offset
     pop ax; return arr_size to AX
 
     add sp, 32
@@ -134,6 +143,10 @@ querySampleArray endp
 
 ;=================================== PROGRAM START==============================
 start:
+    push bp
+    mov bp,sp
+    sub sp, 32; 16 nums
+
     ; setup ds
     mov ax, cs
     mov ds, ax
@@ -179,8 +192,9 @@ start:
     call println
 
     ; call sample collection procedure
-    call querySampleArray; will return arr_size to AX
-    push ax; for print
+    call querySampleArray; will return arr_size to AX, arr_seg_offset to cx
+    mov word ptr [bp-2], cx; arr_seg_offset
+    mov word ptr [bp-4], ax; arr_size
 
     ;=====PRINT ARRAY========================
 
@@ -188,23 +202,23 @@ start:
     call print
 
     ; pass args
-    mov bx, ax
-    mov ax, OFFSET sample_buffer
+    mov bx, word ptr [bp-4]
+    mov ax, word ptr [bp-2]
     call printArr
 
     ;=======PRINT SORTED ARRAY=====================
 
     lea dx, arr_sorted_print_str
     call print
-    pop ax; arr_sz
+    mov ax, word ptr [bp-4]
 
     ; qsort here
     call callQsort
 
-    push ax; save arr_sz
+    mov ax, word ptr [bp-4]
     ; pass args
     mov bx, ax
-    mov ax, OFFSET sample_buffer
+    mov ax, word ptr [bp-2]
     call printArr
 
     ; display COUNT =============================
@@ -212,7 +226,7 @@ start:
     lea dx, count_str
     call print
 
-    pop ax; restore arr_sz
+    mov ax, word ptr [bp-4]
 
     mov si, ax
     lea di, int_buffer
@@ -222,9 +236,9 @@ start:
     call println
 
     ; display SUM ===========================
-    push ax; save arr_sz
+    mov ax, word ptr [bp-4]
     mov bx, ax ;arr_sz(words)
-    mov ax, OFFSET sample_buffer ;arr_seg_offset
+    mov ax, word ptr [bp-2];arr_seg_offset
     call STC_computeSum; returns sum in AX
 
     lea dx, sum_str
@@ -238,10 +252,9 @@ start:
     call println
 
     ; display MEAN =========================
-    pop ax; restore arr_sz
-    push ax; save arr_sz
+    mov ax, word ptr [bp-4]
     mov bx, ax ;arr_sz(words)
-    mov ax, OFFSET sample_buffer ;arr_seg_offset
+    mov ax, word ptr [bp-2];arr_seg_offset
     call STC_computeMean; retuns mean in AX
 
     lea dx, mean_str
@@ -255,10 +268,9 @@ start:
     call println
 
     ; display MEDIAN =====================
-    pop ax; arr_sz
-    push ax; save arr_sz
+    mov ax, word ptr [bp-4]
 
-    mov bx, OFFSET sample_buffer
+    mov bx, word ptr [bp-2]
     xchg ax, bx
     call STC_computeMedian; returns median in AX
 
@@ -273,10 +285,9 @@ start:
     call println
 
     ; display MODE =========================
-    pop ax; arr_sz
-    push ax; save arr_sz
+    mov ax, word ptr [bp-4]
 
-    mov bx, OFFSET sample_buffer
+    mov bx, word ptr [bp-2]
     xchg ax, bx; ax -> arr_seg_offset; bx-> arr_sz
     call STC_computeMode; returns mode in AX
 
@@ -291,10 +302,9 @@ start:
     call println
 
     ; display MAX ===========================
-    pop ax; arr_sz
-    push ax; save arr_sz
+    mov ax, word ptr [bp-4]
 
-    mov bx, OFFSET sample_buffer
+    mov bx, word ptr [bp-2]
     mov si, 2
     mul si; ax = bytesize = 2 * arr_size
     dec ax; ax--
@@ -313,9 +323,9 @@ start:
     call println
 
     ; display MIN =============================
-    pop ax; arr_sz
-    push ax; save arr_sz
-    mov bx, OFFSET sample_buffer
+    mov ax, word ptr [bp-4]
+
+    mov bx, word ptr [bp-2]
     mov ax, word ds[bx]; beginning element
 
     lea dx, arr_min_str
@@ -330,8 +340,9 @@ start:
 
     ; display SD =============================
 
-    pop ax; arr_sz
-    mov bx, OFFSET sample_buffer
+    mov ax, word ptr [bp-4]
+
+    mov bx, word ptr [bp-2]
     xchg ax, bx
     call STC_computePopulationStandardDeviation
 
@@ -371,6 +382,9 @@ start:
     call println
 
     ;================================================
+
+    add sp, 32
+    pop bp
 
     mov al, 0; exit code: EXIT_SUCCESS
     mov ah, 0x4C; return to OS
