@@ -17,10 +17,10 @@ divider_str db "[==============================================================]
 prog_title_str db "[Statistical Calculator v1.0.1.0]$"
 team_name_str db "[Software by: GROUP 12]$"
 note1_str db "NOTE: INTEGER MATHEMATICS ONLY$"
-usr_size_prompt_str db "Enter population size (INT) (MAX=9): $"
+usr_size_prompt_str db "Enter population size (INT): $"
 input_loop_heading_str db "Requesting sample values:$"
 usr_sample_prompt_beg_str db "Enter value for sample $"
-usr_sample_prompt_end_str db " (INT) (UNSIGNED DECIMAL) (MAX=9): $"
+usr_sample_prompt_end_str db " (INT) (UNSIGNED DECIMAL): $"
 input_confirm_str db "Sample values set [OK]$"
 arr_print_str db "Samples: $"
 arr_sorted_print_str db "Sorted: $"
@@ -53,14 +53,18 @@ querySampleArray proc
     lea dx, usr_size_prompt_str
     call print
 
-    ; parse int
-    mov ah, 0x1
-    int 0x21
-    call chtoi; size in al
+    ;scanf proc
+    mov al, SCANF_MAX_LEN
+    mov si, ax
+    lea di, scanf_buffer
+    call scanf
+    
+    lea di, [scanf_buffer+2]
+    call sttoi
 
-    mov cx, 0
-    mov cl, al; cl = arr_size
-    push cx; save size
+    mov cx, ax; cx = arr_size
+    mov word ptr [bp-4], cx; arr_size
+    mov word ptr [bp-12], 1; countdown
 
     mov ah, 0
     mov dx, 2
@@ -82,31 +86,33 @@ inp_loop:
 
     ; printing (cur/cap)
     ; print curr
-    mov al, cl
-    call itoch
-    mov dl, al
-    mov ah, 02h
-    int 21h; print
+    mov si, word ptr [bp-12]
+    lea di, int_buffer
+    push cx
+    call ittost
+    pop cx
+
+    lea dx, int_buffer
+    call print
     
     ; print the slash
     mov dl, '/'
+    mov ah, 0x02
     int 21h; print
     
     ; print capacity
-    pop ax;  orig arr_sz
-    push ax; save arr_sz
-    call itoch
-    mov dl, al
-    mov ah, 02h
-    int 21h; print
-    
+    mov ax, word ptr [bp-4]; ld orig_capacity
+    mov si, ax
+    lea di, int_buffer
+    push cx
+    call ittost
+    pop cx
+
+    lea dx, int_buffer
+    call print
+   
     lea dx, usr_sample_prompt_end_str
     call print
-
-    ; single inputs
-    ;mov ah, 01h
-    ;int 21h; input read
-    ;call chtoi
 
     ; scanf proc
     mov al, SCANF_MAX_LEN
@@ -125,6 +131,7 @@ inp_loop:
 
     NEWLINE
 
+    inc word ptr [bp-12]
     dec cl; dec curr
     jnz inp_loop
 inp_loop_end:
@@ -134,7 +141,7 @@ inp_loop_end:
     call println
     
     mov cx, word ptr [bp-8]; return arr_seg_offset
-    pop ax; return arr_size to AX
+    mov ax, word ptr [bp-4]; return arr_size to AX
 
     add sp, 32
     pop bp
@@ -151,29 +158,6 @@ start:
     mov ax, cs
     mov ds, ax
     xor ax, ax
-
-    ;; scanf proc
-    ;mov al, SCANF_MAX_LEN
-    ;mov si, ax
-    ;lea di, scanf_buffer
-    ;call scanf
-    
-    ;lea di, [scanf_buffer+2]
-    ;call sttoi
-
-    ;mov si, ax
-    ;lea di, int_buffer
-    ;call ittost
-
-    ;NEWLINE
-    ;lea dx, int_buffer
-    ;call println
-
-    ;; accessing input
-    ;lea dx, [scanf_buffer+2]
-    ;call println
-    
-    ;ret
 
     ; decorative prints
     lea dx, divider_str
@@ -213,7 +197,14 @@ start:
     mov ax, word ptr [bp-4]
 
     ; qsort here
-    call callQsort
+    mov di, word ptr [bp-2]
+    mov si, word ptr [bp-4]
+    mov dx, 0
+    mov cx, word ptr [bp-4]; arr_size
+    mov ax, 2
+    mul cx
+    mov cx, ax; convert to byte_size
+    call STC_qsort
 
     mov ax, word ptr [bp-4]
     ; pass args

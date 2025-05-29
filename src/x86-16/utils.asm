@@ -316,6 +316,7 @@ printArr proc
     
 printloop:
     push cx 
+
     mov si, word ptr [bp-4]; load idx
     mov ax, word ptr ds[bx+si]; fetch element
 

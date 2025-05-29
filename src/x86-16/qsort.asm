@@ -13,103 +13,102 @@ STC_swap_in_buf proc
     ret
 STC_swap_in_buf endp
 
-; cdecl void STC_qsort(arr_seg_idx, arr_size, start offset, end offset)
-; scratch registers: AX, BX, CX, DX 
-; Caller should save these ^
+; cdecl void STC_qsort(arr_seg_offset, arr_size, start offset, end offset)
+; arr_seg_offset : DI
+; arr_size : SI
+; start_offset : DX
+; end_offset : CX
+; NOTE: OFFSETS IN BYTES
 STC_qsort proc
     push bp
     mov bp, sp
-    ; fetch args
-    mov si, [bp+4] ; load src arr seg offset: arr_seg_idx
-    mov cx, [bp+6] ; load size: arr_size
-    mov ax, [bp+8]; j : start offset
-    mov bx, ax; i
-    dec bx
-    dec bx; i = j - 1
-    mov dx, [bp+10] ; pivot : end offset
+    sub sp, 32; 16 nums
+
+    mov bx, di; arr_seg_offset
+    mov word ptr [bp-2], si; arr_size
+    mov word ptr [bp-4], dx; start offset
+    mov word ptr [bp-6], cx; end offset
+    ;----
+    mov word ptr [bp-8], dx; j
+    mov word ptr [bp-10], dx; i
+    dec word ptr [bp-10]
+    dec word ptr [bp-10]; i = j-1
+    mov word ptr [bp-12], cx; pivot
 
     ; 1st iter guard
-    cmp dx, ax
-    jz _end; if j == pivot i.e 1 element: return
-    jl _end; if j > pivot : return
-    
-    push ax; save original j
+    mov dx, word ptr [bp-12]; ld pivot
+    cmp word ptr [bp-8], dx; j, pivot
+    jge _end; if j == pivot i.e 1 element: return OR if j > pivot : return
+
+    mov si, cx;pivot
+    mov cx, word ptr [bx+si];ld pivot_val
+    mov word ptr [bp-14], cx; pivot value
     
 ; while j < pivot; j++
-_loop:
-    ;save scratch registers
-    push cx; size
-    push ax; j
+qsort_loop:
     
     ; fetch j val & pivot val
-    push si
-    add si, ax
-    mov cx, word ds[si]; j val
-    sub si, ax
-    add si, dx
-    mov ax, word ds[si]; pivot val
-    pop si
-    ; cx & ax are modified now
+    mov si, word ptr [bp-8]; ld j
+    mov ax, word ptr [bx+si]; j val
     
-    cmp ax, cx; if j val > pivot val
-    pop ax; j
-    js  _skip_swap   
+    cmp ax, word ptr [bp-14]; j_v, piv_v
+    jg  _skip_swap   ; if j val > pivot val
     
-    ; swap start
-    mov di, si
-    add di, ax; di = j
-    
-    push si; save si
-    inc bx
-    inc bx; i++
-    add si, bx; si = i
-    
-    call STC_swap_in_buf; swap i & j vals from ds
-    ; swap complete
-    
-    pop si; arr_seg_idx
+    ; swap start ----
 
+    mov di, word ptr [bp-8] ; di = j
+    inc word ptr [bp-10]
+    inc word ptr [bp-10]; i++
+    mov si, word ptr [bp-10]; si = i
+    
+    add si, bx
+    add di, bx; convert to raw addr
+    call STC_swap_in_buf; swap i & j vals from ds
+    ; swap complete ----
     
 _skip_swap:
 
-    pop cx; arr_sz
-    inc ax
-    inc ax; j++
+    inc word ptr [bp-8]
+    inc word ptr [bp-8]; j++
     
-    cmp dx, ax; j < pivot
+    mov ax, word ptr [bp-8]; j
+    cmp ax, word ptr [bp-12]; j, pivot
     
-    jnz _loop; only if dx and ax are aligned to two bytes
+    jl qsort_loop; loop if j < pivot
     
-_loop_end:; j == pivot (assuming AX will never overshoot)
-    pop ax; restore original j
+qsort_loop_end:; j == pivot (assuming j will never overshoot)
     
 ; swap i <-> pivot ====
-    inc bx
-    inc bx; i++
+    inc word ptr [bp-10]
+    inc word ptr [bp-10]; i++
     
-    mov di, si
-    add di, dx; pivot
-    
-    push si
-    add si, bx; i
-    
+    mov di, word ptr [bp-12]; pivot
+    mov si, word ptr [bp-10]; i
+     
+    ;sort pivot element
+    add si, bx
+    add di, bx; convert to raw addr
     call STC_swap_in_buf
-    pop si
     
-    xchg dx, bx; pivot <-> i
-    ; dx is modified now; sorted pivot
-    ; bx: end
+    ; swap i & piv
+    mov dx, word ptr [bp-12]; pivot
+    xchg dx, word ptr [bp-10]; pivot <-> i
+    mov word ptr [bp-12], dx
+    ; sorted pivot index^
+    mov si, word ptr [bp-12]
+    mov ax, word ptr [bx+si]; update pivot val
+    mov word ptr [bp-14], ax
     
-    cmp dx, 0
-    ;jz _skip_left_rcrs; if pivot==0: skip
+    cmp word ptr [bp-12], 0
+    je _skip_left_rcrs; if pivot==0: skip
     
     ; rcrse left sub-array-----
+    mov dx, word ptr [bp-12]; ld sorted_pivot
     dec dx
     dec dx; left_end = pivot - 1
 
-    cmp dx, ax
-    jz _skip_left_rcrs; left_end == start (will be one element sub-arr)
-    jl _skip_left_rcrs; left_end < start
+    cmp dx, word ptr [bp-4]
+    jle _skip_left_rcrs; left_end == start_offset (will be one element sub-arr) OR left_end < start_offset
     
     ; save registers
     push dx
@@ -117,17 +116,14 @@ _loop_end:; j == pivot (assuming AX will never overshoot)
     push bx
     push ax
     
-    ;args; will be popped inside function
-    push dx; left_end
-    push ax; left_start
-    push cx; arr_size
-    push si; arr_seg_idx
+    mov di, bx; arr_seg_offset
+    mov si, word ptr [bp-2]; arr_size
+    mov cx, dx; left_end
+    mov dx, word ptr [bp-4]; left_start
     
-    call STC_qsort; will restore regs
-    
-    add sp, 8;cleanup args from stack
-    
-     ;restore registers
+    call STC_qsort
+   
+    ;restore registers
     pop ax
     pop bx
     pop cx
@@ -135,32 +131,27 @@ _loop_end:; j == pivot (assuming AX will never overshoot)
     
 _skip_left_rcrs:
 
-    inc dx
-    inc dx; restore pivot
-    
     ; rcrse right sub-array-----
+    mov dx, word ptr [bp-12]; ld sorted_pivot
     inc dx
     inc dx; right_start = pivot + 1
  
-    cmp bx, dx; end < right_start
-    
-    jz _skip_right_rcrs; right_start == arr_size
-    jl _skip_right_rcrs; right_start > arr_size
+    cmp word ptr [bp-6], dx; end, right_start
+   
+    jle _skip_right_rcrs; right_start == end OR right_start > end
     
     ; save registers
     push dx
     push cx
     push bx
     push ax
-    
-    push bx; end
-    push dx; start
-    push cx; arr_size
-    push si; arr_seg_idx
-    
+  
+    mov di, bx; arr_seg_offset
+    mov si, word ptr [bp-2]; arr_size
+    ; dx already has right_start
+    mov cx, word ptr [bp-6]; right_end
+   
     call STC_qsort
-    
-    add sp, 8;cleanup args from stack
     
     ;restore registers
     pop ax
@@ -170,56 +161,11 @@ _skip_left_rcrs:
     
 _skip_right_rcrs:
     
-    dec dx
-    dec dx; restore pivot;
-    
 _end:
+    add sp, 32
     mov sp, bp
     pop bp
     ret
 STC_qsort endp
 
-
-; TODO: bad design
-callQsort proc
-    ; prep to call qsort-----
-    ; save registers ==
-    push dx
-    push cx
-    push bx
-    push ax; arr_sz
-    
-    mov bx, 2
-    mul bx ; 2 bytes(1 word)(BX) * count(AX)
-    mov bx, ax; bx = arr_byte_sz
-    dec ax
-    dec ax; minus 1 word (cuz its an offset)
-    
-    ; pass args (cdecl) ==
-    push ax; arg: end offset
-
-    mov ax, 0; 2 bytes(1 word) * 0 offset
-    push ax; arg: start offset
-    
-    mov ax, bx ; arg: arr_size
-    mov bx, 2
-    div bx; ax = arr_sz
-    push ax
-
-    mov ax, OFFSET sample_buffer; get src arr offset from seg
-    push ax; arg: arr_seg_idx
-
-    xor ax, ax; clear
-
-    ;cdecl void qsort(arr_seg_idx, arr_size, start offset, end offset)
-    call STC_qsort
-
-    add sp, 8; cleanup args from stack
-
-    ; restore
-    pop ax
-    pop bx
-    pop cx
-    pop dx
-    ret
-callQsort endp
+;====================================================================
