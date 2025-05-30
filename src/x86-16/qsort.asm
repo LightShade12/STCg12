@@ -23,6 +23,7 @@ STC_qsort proc
     push bp
     mov bp, sp
     sub sp, 32; 16 nums
+    push bx
 
     mov bx, di; arr_seg_offset
     mov word ptr [bp-2], si; arr_size
@@ -162,6 +163,7 @@ _skip_left_rcrs:
 _skip_right_rcrs:
     
 _end:
+    pop bx
     add sp, 32
     mov sp, bp
     pop bp

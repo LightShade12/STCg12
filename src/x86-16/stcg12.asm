@@ -204,6 +204,8 @@ start:
     mov ax, 2
     mul cx
     mov cx, ax; convert to byte_size
+    dec cx
+    dec cx; convert to offset
     call STC_qsort
 
     mov ax, word ptr [bp-4]

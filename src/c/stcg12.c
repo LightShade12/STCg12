@@ -250,6 +250,7 @@ float STC_computePopulationStandardDeviation(int* data, size_t num)
     for (size_t i = 0; i < num; i++)
     {
         numerator += STC_sqr((float)data[i] - mu_);
+        // printf("num: %.3f\n", numerator);
     }
     return sqrtf(numerator / (float)num);
 }
